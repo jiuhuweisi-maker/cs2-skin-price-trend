@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>CS2 饰品走势 · 蝴蝶刀伽玛多普勒 vs MP9星使</title>
+<style>
+  html,body{margin:0;padding:0;background:#07090d;overflow:hidden}
+  canvas{display:block}
+</style>
+</head>
+<body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<script>
+const CV = document.getElementById('cv');
+const ctx = CV.getContext('2d');
+const W = 1920, H = 1080;
+
+const FONT = '"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif';
+const BG = '#0B0E14';
+const GRID = 'rgba(255,255,255,0.06)';
+const TXT = '#E8EDF5';
+const DIM = '#7C8798';
+
+// ---- 布局 ----
+const L = { x0: 150, x1: 1770, y0: 360, y1: 780 };
+const KPI_Y = 838;
+
+let DATA = null;
+
+function fmt(n, d = 0) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function money(n) { return '¥' + fmt(n); }
+function moneyK(n) { return n >= 10000 ? '¥' + (n / 10000).toFixed(2) + '万' : '¥' + fmt(n); }
+
+function monthLabel(m) {
+  const [y, mm] = m.split('-');
+  return y + '年' + Number(mm) + '月';
+}
+
+function niceTicks(min, max, count) {
+  const span = max - min || 1;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let step;
+  if (norm <= 1) step = 1; else if (norm <= 2) step = 2; else if (norm <= 2.5) step = 2.5;
+  else if (norm <= 5) step = 5; else step = 10;
+  step *= mag;
+  const lo = Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const ticks = [];
+  for (let v = lo; v <= hi + step * 0.5; v += step) ticks.push(v);
+  return { lo, hi, ticks, step };
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+// 时间轴：0~0.06 入场，0.06~0.90 推进，0.90~1 收尾
+function progress(t) {
+  if (t <= 0.06) return 0;
+  if (t >= 0.90) return 1;
+  return easeInOut((t - 0.06) / 0.84);
+}
+
+function build() {
+  const months = DATA.months;
+  const N = months.length;
+
+  const ranges = DATA.items.map(it => {
+    const vals = it.points.filter(v => v !== null);
+    return { min: Math.min(...vals), max: Math.max(...vals) };
+  });
+
+  const left = niceTicks(ranges[0].min * 0.97, ranges[0].max * 1.03, 5);
+  const right = niceTicks(ranges[1].min * 0.9, ranges[1].max * 1.1, 5);
+
+  return { months, N, left, right };
+}
+
+const X = (i, N) => L.x0 + (L.x1 - L.x0) * (N <= 1 ? 0 : i / (N - 1));
+const YL = (v, r) => L.y1 - (L.y1 - L.y0) * ((v - r.lo) / (r.hi - r.lo));
+const YR = (v, r) => L.y1 - (L.y1 - L.y0) * ((v - r.lo) / (r.hi - r.lo));
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function draw(t) {
+  const G = build();
+  const p = progress(t);
+  const fi = p * (G.N - 1);
+  const i0 = Math.floor(fi);
+  const frac = fi - i0;
+
+  // 背景
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0A0D13');
+  bg.addColorStop(1, '#0E1219');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // 顶部光晕
+  const glow = ctx.createRadialGradient(960, 120, 0, 960, 120, 900);
+  glow.addColorStop(0, 'rgba(53,224,161,0.10)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, 500);
+
+  // ---- 标题 ----
+  const introA = clamp(t / 0.05, 0, 1);
+  ctx.globalAlpha = introA;
+  ctx.fillStyle = DIM;
+  ctx.font = '500 26px ' + FONT;
+  ctx.textAlign = 'left';
+  ctx.fillText('CSGOSKINS.GG · 多市场最低价（Factory New）', L.x0, 92);
+
+  ctx.fillStyle = TXT;
+  ctx.font = '700 52px ' + FONT;
+  ctx.fillText('假如你在 2022 年 1 月买了这两件饰品', L.x0, 158);
+
+  ctx.fillStyle = DIM;
+  ctx.font = '400 26px ' + FONT;
+  ctx.fillText('★ 蝴蝶刀 | 伽玛多普勒 (崭新出厂)   ·   MP9 | 星使 (崭新出厂)   ·   各 1 件', L.x0, 204);
+  ctx.globalAlpha = 1;
+
+  // ---- 当前月份 ----
+  const curIdx = Math.min(G.N - 1, i0);
+  const curMonth = G.months[curIdx];
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(232,237,245,0.92)';
+  ctx.font = '700 76px ' + FONT;
+  ctx.fillText(monthLabel(curMonth), L.x1, 150);
+  ctx.fillStyle = DIM;
+  ctx.font = '400 24px ' + FONT;
+  ctx.fillText('数据截至 ' + G.months[G.N - 1], L.x1, 190);
+
+  // ---- 网格 & 轴 ----
+  ctx.textAlign = 'right';
+  ctx.font = '400 22px ' + FONT;
+  G.left.ticks.forEach(v => {
+    const y = YL(v, G.left);
+    if (y < L.y0 - 1 || y > L.y1 + 1) return;
+    ctx.strokeStyle = GRID;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(L.x0, y); ctx.lineTo(L.x1, y); ctx.stroke();
+    ctx.fillStyle = '#5E6B7D';
+    ctx.fillText(fmt(v), L.x0 - 18, y + 8);
+  });
+
+  ctx.textAlign = 'left';
+  G.right.ticks.forEach(v => {
+    const y = YR(v, G.right);
+    if (y < L.y0 - 1 || y > L.y1 + 1) return;
+    ctx.fillStyle = '#5E6B7D';
+    ctx.fillText(fmt(v), L.x1 + 18, y + 8);
+  });
+
+  // 年份分隔
+  ctx.textAlign = 'center';
+  ctx.font = '400 22px ' + FONT;
+  G.months.forEach((m, i) => {
+    if (!m.endsWith('-01')) return;
+    const x = X(i, G.N);
+    ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+    ctx.beginPath(); ctx.moveTo(x, L.y0); ctx.lineTo(x, L.y1); ctx.stroke();
+    if (i <= i0 + 0.001) {
+      ctx.fillStyle = '#55606F';
+      ctx.fillText(m.slice(0, 4), x, L.y1 + 36);
+    }
+  });
+
+  // ---- 数据线 ----
+  DATA.items.forEach((it, k) => {
+    const r = k === 0 ? G.left : G.right;
+    const Y = k === 0 ? YL : YR;
+    const col = it.color;
+
+    // 面积（仅第一条）
+    if (k === 0) {
+      const grad = ctx.createLinearGradient(0, L.y0, 0, L.y1);
+      grad.addColorStop(0, 'rgba(53,224,161,0.20)');
+      grad.addColorStop(1, 'rgba(53,224,161,0.00)');
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i <= curIdx; i++) {
+        const v = it.points[i];
+        if (v === null) continue;
+        const x = X(i, G.N), y = Y(v, r);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      if (started) {
+        const lastV = it.points[curIdx];
+        if (lastV !== null) {
+          ctx.lineTo(X(curIdx, G.N), L.y1);
+          const firstIdx = it.points.findIndex(v => v !== null);
+          ctx.lineTo(X(firstIdx, G.N), L.y1);
+          ctx.closePath();
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+      }
+    }
+
+    // 线
+    ctx.save();
+    ctx.lineWidth = 4;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= curIdx; i++) {
+      const v = it.points[i];
+      if (v === null) continue;
+      const x = X(i, G.N), y = Y(v, r);
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    // 到当前插值位置
+    const vCur = it.points[curIdx];
+    if (vCur !== null && curIdx + 1 < G.N && frac > 0) {
+      const nxt = it.points[curIdx + 1];
+      if (nxt !== null) ctx.lineTo(lerp(X(curIdx, G.N), X(curIdx + 1, G.N), frac), Y(lerp(vCur, nxt, frac), r));
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // 端点
+    const vNow = (() => {
+      const a = it.points[curIdx];
+      const b = it.points[curIdx + 1];
+      if (a === null) return null;
+      if (b === null || frac === 0) return { v: a, x: X(curIdx, G.N) };
+      return { v: lerp(a, b, frac), x: lerp(X(curIdx, G.N), X(curIdx + 1, G.N), frac) };
+    })();
+
+    if (vNow) {
+      const y = Y(vNow.v, r);
+      ctx.save();
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 24;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(vNow.x, y, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath(); ctx.arc(vNow.x, y, 3.2, 0, Math.PI * 2); ctx.fill();
+
+      // 数值气泡
+      const label = money(vNow.v);
+      ctx.font = '700 30px ' + FONT;
+      const tw = ctx.measureText(label).width;
+      const bw = tw + 36, bh = 52;
+      let bx = vNow.x + 26;
+      if (bx + bw > L.x1 + 110) bx = vNow.x - bw - 26;
+      const by = clamp(y - bh / 2, L.y0 - 10, L.y1 - bh + 10);
+      ctx.fillStyle = 'rgba(16,20,28,0.92)';
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 2;
+      roundRect(bx, by, bw, bh, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col;
+      ctx.textAlign = 'left';
+      ctx.fillText(label, bx + 18, by + 36);
+    }
+  });
+
+  // ---- KPI ----
+  const kpis = DATA.items.map((it, k) => {
+    const vals = it.points.filter(v => v !== null);
+    const start = vals[0];
+    const nowRaw = it.points[curIdx];
+    const now = nowRaw === null ? null : nowRaw;
+    return { it, start, now, chg: now === null ? null : (now / start - 1) * 100 };
+  });
+
+  const cardW = (L.x1 - L.x0 - 40) / 2;
+  kpis.forEach((kp, k) => {
+    const x = L.x0 + k * (cardW + 40);
+    const y = KPI_Y, h = 172;
+    ctx.fillStyle = 'rgba(255,255,255,0.028)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1.5;
+    roundRect(x, y, cardW, h, 18);
+    ctx.fill(); ctx.stroke();
+
+    // 左侧色条
+    ctx.fillStyle = kp.it.color;
+    roundRect(x, y, 6, h, 3);
+    ctx.fill();
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = TXT;
+    ctx.font = '600 28px ' + FONT;
+    ctx.fillText(kp.it.short, x + 34, y + 52);
+
+    // 品类标签：匕首 / 微型冲锋枪
+    if (kp.it.kind) {
+      const nw = ctx.measureText(kp.it.short).width;
+      ctx.font = '500 18px ' + FONT;
+      const kw = ctx.measureText(kp.it.kind).width;
+      const px = x + 34 + nw + 12, py = y + 28, ph = 28;
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      roundRect(px, py, kw + 20, ph, 8);
+      ctx.fill();
+      ctx.fillStyle = '#8C97A8';
+      ctx.fillText(kp.it.kind, px + 10, py + 20);
+    }
+
+    ctx.fillStyle = DIM;
+    ctx.font = '400 22px ' + FONT;
+    ctx.fillText('2022-01 买入 ' + money(kp.start), x + 34, y + 96);
+
+    ctx.fillStyle = TXT;
+    ctx.font = '700 34px ' + FONT;
+    ctx.fillText(kp.now === null ? '—' : money(kp.now), x + 34, y + 142);
+
+    if (kp.chg !== null) {
+      const up = kp.chg >= 0;
+      const cc = up ? '#35E0A1' : '#FF5C8A';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = cc;
+      ctx.font = '700 40px ' + FONT;
+      ctx.fillText((up ? '+' : '') + kp.chg.toFixed(1) + '%', x + cardW - 34, y + 142);
+    }
+  });
+
+  // ---- 事件标注 ----
+  const events = [
+    { m: '2022-01', text: '建仓' },
+    { m: '2023-09', text: 'CS2 正式上线' },
+  ];
+  events.forEach(ev => {
+    const i = G.months.indexOf(ev.m);
+    if (i < 0 || i > curIdx) return;
+    const x = X(i, G.N);
+    ctx.save();
+    ctx.setLineDash([6, 8]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x, L.y0); ctx.lineTo(x, L.y1); ctx.stroke();
+    ctx.restore();
+
+    ctx.textAlign = 'center';
+    ctx.font = '500 20px ' + FONT;
+    const tw = ctx.measureText(ev.text).width;
+    ctx.fillStyle = 'rgba(20,26,36,0.95)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+    ctx.lineWidth = 1.2;
+    roundRect(x - tw / 2 - 14, L.y0 - 44, tw + 28, 34, 8);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#C8D2E0';
+    ctx.fillText(ev.text, x, L.y0 - 20);
+  });
+
+  // ---- 收尾卡 ----
+  if (t > 0.90) {
+    const a = clamp((t - 0.90) / 0.05, 0, 1);
+    ctx.globalAlpha = a;
+    ctx.fillStyle = 'rgba(7,9,13,0.86)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = TXT;
+    ctx.font = '700 64px ' + FONT;
+    ctx.fillText('4 年 9 个月，两件饰品合计', W / 2, 420);
+
+    const totStart = kpis.reduce((s, k) => s + k.start, 0);
+    const totNow = kpis.reduce((s, k) => s + (k.now || 0), 0);
+    const totChg = (totNow / totStart - 1) * 100;
+    ctx.fillStyle = totChg >= 0 ? '#35E0A1' : '#FF5C8A';
+    ctx.font = '800 128px ' + FONT;
+    ctx.fillText((totChg >= 0 ? '+' : '') + totChg.toFixed(1) + '%', W / 2, 580);
+
+    ctx.fillStyle = DIM;
+    ctx.font = '400 34px ' + FONT;
+    ctx.fillText(money(totStart) + '  →  ' + money(totNow), W / 2, 660);
+
+    ctx.fillStyle = '#4B5563';
+    ctx.font = '400 24px ' + FONT;
+    ctx.fillText('数据来源：csgoskins.gg（多市场最低价，站内汇率折算）· 仅供数据分享，不构成投资建议', W / 2, 900);
+    ctx.globalAlpha = 1;
+  }
+}
+
+window.__renderAt = (t) => { draw(t); return true; };
+window.__ready = false;
+
+fetch('chart.json').then(r => r.json()).then(j => {
+  DATA = j;
+  window.__ready = true;
+  draw(0);
+});
+</script>
+</body>
+</html>

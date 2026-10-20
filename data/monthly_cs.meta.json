@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-10-20T07:51:28.275Z",
+  "source": "csgoskins.gg /items/<item>/factory-new 内嵌 priceHistory",
+  "currency": {
+    "native": "USD",
+    "display": "CNY",
+    "rate": 6.6911975959802,
+    "note": "站点按固定汇率折算，非历史汇率"
+  },
+  "range": {
+    "from": "2022-01-20",
+    "to": "2026-10-20"
+  },
+  "method": "日价=当日站点价；月价=当月日均价，先按月中位数剔除 <50% 或 >200% 的异常值再取均值",
+  "items": [
+    {
+      "key": "bfly",
+      "name": "★ 蝴蝶刀 | 伽玛多普勒 (崭新出厂)",
+      "kind": "匕首",
+      "url": "https://csgoskins.gg/items/butterfly-knife-gamma-doppler/factory-new",
+      "raw_points": 1847,
+      "first_raw": "2021-09-29",
+      "last_raw": "2026-10-19",
+      "daily_points": 1734,
+      "months": 58,
+      "missing_months": [],
+      "first_usd": 1301.26,
+      "first_cny": 8706.99,
+      "last_usd": 1469,
+      "last_cny": 9829.37
+    },
+    {
+      "key": "mp9",
+      "name": "MP9 | 星使 (崭新出厂)",
+      "kind": "微型冲锋枪",
+      "url": "https://csgoskins.gg/items/mp9-starlight-protector/factory-new",
+      "raw_points": 1734,
+      "first_raw": "2022-01-21",
+      "last_raw": "2026-10-20",
+      "daily_points": 1734,
+      "months": 58,
+      "missing_months": [],
+      "first_usd": 275.78,
+      "first_cny": 1845.3,
+      "last_usd": 81.5,
+      "last_cny": 545.33
+    }
+  ]
+}
