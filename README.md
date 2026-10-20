@@ -3,6 +3,8 @@
 把两件 CS2 饰品的真实历史价格，做成一条 90 秒的 1080p 动态走势视频。
 
 > 数据来源 [csgoskins.gg](https://csgoskins.gg)，全部为真实抓取值，无任何模拟数据。
+>
+> 配套的提示词模板见 [dsh-prompt-kit](https://github.com/jiuhuweisi-maker/dsh-prompt-kit)。
 
 ## 效果
 
