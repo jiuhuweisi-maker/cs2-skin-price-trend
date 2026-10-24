@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Skin Reveal 网页历史价读取助手",
+  "version": "1.1.0",
+  "description": "仅在你选择的 CSGOSKINS.GG 饰品页读取图表历史价，发送给本机 Skin Reveal。",
+  "host_permissions": [
+    "https://csgoskins.gg/*",
+    "http://127.0.0.1:8765/*"
+  ],
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [
+    {"matches": ["https://csgoskins.gg/*"], "js": ["site.js"], "run_at": "document_idle"},
+    {"matches": ["http://127.0.0.1:8765/*"], "js": ["bridge.js"], "run_at": "document_idle"}
+  ]
+}

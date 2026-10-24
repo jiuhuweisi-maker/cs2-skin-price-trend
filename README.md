@@ -1,5 +1,12 @@
 # CS2 饰品价格走势视频生成器
 
+
+## Skin Reveal 本地交互工作台
+
+想自己搜索饰品、生成价格走势动画和导出视频？完整应用已整理在 [skin-reveal/](skin-reveal/README.md)。下载本仓库 ZIP 后进入 `skin-reveal` 文件夹，在 Windows 双击 `启动.bat` 即可；首次启动需要安装 Python 3.11+ 和项目依赖。MP4/GIF 需要 ffmpeg，未安装时仍可导出 WebM。自动读取 CSGOSKINS.GG 历史价格需要按说明一次性加载 Edge 助手。
+
+---
+
 把两件 CS2 饰品的真实历史价格，做成一条 90 秒的 1080p 动态走势视频。
 
 > 数据来源 [csgoskins.gg](https://csgoskins.gg)，全部为真实抓取值，无任何模拟数据。

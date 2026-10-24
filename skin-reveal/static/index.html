@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Skin Reveal · CS 饰品走势视频</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/style.css?v=11">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brandmark">↗</span><div><b>SKIN REVEAL</b><small>CS 饰品走势视频工作台</small></div></div>
+  <div class="top-actions"><span id="status" class="status">本地运行 · 数据仅保存在此电脑</span><button id="savePreset" class="ghost">☆ 保存预设</button><button id="export" class="primary">↓ 导出视频</button></div>
+</header>
+<main class="workspace">
+  <aside class="panel controls">
+    <div class="panel-head"><span class="eyebrow">01 / DATA</span><h2>饰品与数据</h2><p>导入你的价格历史，或加载演示数据查看效果。</p></div>
+    <div class="field"><label for="names">饰品名称 <span>中文或英文，输入不完整也可搜索</span></label><textarea id="names" rows="2" placeholder="★ Butterfly Knife | Lore / 蝴蝶刀传说"></textarea><button id="resolve" class="small-btn">联网搜索并读取</button><div id="searchStatus" class="field-help">完整匹配会自动打开官网页面并导入历史价；有多个候选时请选具体饰品。</div></div>
+    <div id="candidates" class="candidates"></div>
+    <div id="readerInfo" class="reader-info">自动搜索与读取需在 Edge 安装本地读取助手：打开 <b>edge://extensions</b>，加载解压缩的扩展，选择 <b>D:\Download\cs走势图表制作\extension</b>。如已安装旧版，请在扩展管理页点“重新加载”并刷新本页；网页遇安全检查时由你正常完成。</div>
+    <div id="targetInfo" class="target-info hidden"></div>
+    <div class="import-box"><div><b>导入历史 CSV</b><small>date,price 或 date,lowest,median</small></div><input id="csvFile" type="file" accept=".csv,text/csv" multiple><button id="chooseCsv" class="small-btn">选择文件</button></div>
+    <div class="data-links"><button id="loadDemo" class="text-btn">＋ 加载两份演示数据</button><button id="jsonToggle" class="text-btn">导入 API JSON</button></div>
+    <div id="jsonBox" class="hidden"><input id="jsonName" placeholder="JSON 中的 market_hash_name（含磨损度）"><input id="jsonPhase" placeholder="phase：如 Ruby；普通饰品留空"><textarea id="jsonText" rows="4" placeholder="粘贴官方 /api/v1/price-histories 响应"></textarea><button id="importJson" class="small-btn">导入 JSON</button></div>
+    <div class="section-label">已导入数据 <span id="seriesCount">0</span></div><div class="quantity-hint">勾选饰品，并在右侧填写当年买入的件数</div><div id="seriesList" class="series-list"></div>
+    <div class="divider"></div>
+    <div class="panel-head compact"><span class="eyebrow">02 / STORY</span><h2>叙事参数</h2></div>
+    <div class="grid-two"><div class="field"><label for="start">起始日期</label><input id="start" type="date" value="2016-01-01"></div><div class="field"><label for="end">结束日期</label><input id="end" type="date"></div></div>
+    <div class="grid-two"><div class="field"><label for="currency">显示币种</label><select id="currency"><option value="CNY">CNY · 人民币</option><option value="USD">USD · 美元</option><option value="EUR">EUR · 欧元</option></select><div id="rateInfo" class="field-help">正在获取汇率…</div></div><div class="field"><label for="metric">价格口径</label><select id="metric"><option value="median">中位价</option><option value="lowest">最低价</option></select></div></div>
+    <div class="field"><label for="interval">走势取点间隔</label><select id="interval"><option value="month" selected>每月一个点</option><option value="quarter">每 3 个月一个点</option><option value="raw">原始数据</option></select><div class="field-help">按自然月或季度取最后一条已有价格，起点保留；点与点之间由动画直线过渡。</div></div>
+    <div class="field"><label for="title">主标题</label><input id="title" placeholder="留空自动生成"></div>
+    <div class="toggles"><label><input id="normalize" type="checkbox"> 归一化对比</label><label><input id="logscale" type="checkbox"> 对数纵轴</label><label><input id="grid" type="checkbox" checked> 显示网格</label><label><input id="watermark" type="checkbox"> 水印</label></div>
+  </aside>
+  <section class="stage">
+    <div class="stage-top"><div><span class="eyebrow">LIVE PREVIEW</span><h1>走势预览 <em>Reveal animation</em></h1></div><div class="ratio-tabs"><button data-ratio="9:16" class="active">9:16</button><button data-ratio="16:9">16:9</button><button data-ratio="1:1">1:1</button></div></div>
+    <div class="canvas-wrap"><canvas id="chart" width="720" height="1280"></canvas><div id="empty" class="empty"><div class="empty-icon">↗</div><b>等待数据进入画布</b><span>加载演示数据，或导入你自己的历史价格 CSV</span></div></div>
+    <div class="player"><button id="play" class="play">▶</button><button id="step" title="前进一个月">⇥</button><span id="clock">00:00 / 00:55</span><input id="progress" type="range" min="0" max="1000" value="0"><select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option></select><button id="png" title="保存当前帧">PNG</button></div>
+    <div class="stage-foot"><span id="samplingInfo">● 实时画布渲染</span><span id="hoverInfo">移动鼠标可查看日期与价格</span></div>
+  </section>
+  <aside class="panel finishing"><div class="panel-head"><span class="eyebrow">03 / FINISH</span><h2>视频设置</h2><p>导出时按真实时长录制画布。</p></div><div class="field"><label for="duration">时长</label><select id="duration"><option value="30">30 秒</option><option value="45">45 秒</option><option value="55" selected>55 秒</option><option value="60">60 秒</option></select></div><div class="field"><label for="fps">帧率</label><select id="fps"><option value="24">24 fps</option><option value="30" selected>30 fps</option></select></div><div class="field"><label for="format">格式</label><select id="format"><option value="mp4">MP4 · 推荐</option><option value="gif">GIF · 动图</option><option value="webm">WebM · 原始录制</option></select></div><div class="export-note">9:16 按 1080 × 1920 导出。MP4/GIF 需要本机安装 ffmpeg。</div><div id="exportProgress" class="export-progress hidden"><div><span id="exportLabel">准备录制…</span><b id="exportPercent">0%</b></div><div class="bar"><i id="exportBar"></i></div></div><a id="download" class="download hidden" download>下载已导出文件 ↗</a><div class="divider"></div><div class="section-label">收藏预设</div><div id="presets" class="presets"></div><div class="source-note"><b>数据说明</b><p>CSGOSKINS.GG 与官方 API 历史价按美元保存；选择 CNY/EUR 时按每日参考汇率换算。汇率通过 Frankfurter 获取并缓存 12 小时，图表会显示采用的汇率日期。CSV 按导入时选择的币种保存，演示数据按 CNY 保存。</p></div></aside>
+</main>
+<div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js?v=16"></script>
+</body>
+</html>
